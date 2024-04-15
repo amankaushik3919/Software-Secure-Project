@@ -1,4 +1,4 @@
-# Encryption/Decryption The Program Do
+# Encryption/Decryption The Program Have
 
 ### 1. ROT13
 ### 2. AES
