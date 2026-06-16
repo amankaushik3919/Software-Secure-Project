@@ -231,3 +231,23 @@ class Encrypt:
         cipher_list = encrypt_playfair_cipher(matrix, plaintext_list)
 
         return "".join(cipher_list)
+
+    @staticmethod
+    # Encryption function
+    def affine_encrypt(text, a=5, b=8):
+        encrypted_text = ""
+        for char in text:
+            if char.isalpha():
+                if char.isupper():
+                    encrypted_text += chr(
+                        ((a * (ord(char) - ord("A")) + b) % 26) + ord("A")
+                    )
+                else:
+                    encrypted_text += chr(
+                        ((a * (ord(char) - ord("a")) + b) % 26) + ord("a")
+                    )
+            else:
+                encrypted_text += char
+        return encrypted_text
+    
+    

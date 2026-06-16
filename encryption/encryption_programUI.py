@@ -24,7 +24,8 @@ class UI:
         self.create_encryption_row(0, "ROT13", self.perform_rot13)
         self.create_encryption_row(1, "AES", self.perform_aes)
         self.create_encryption_row(2, "Rail Fence Cipher", self.perform_railFenceCipher)
-        self.create_encryption_row(2, "Playfair", self.perform_playfair)
+        self.create_encryption_row(3, "Playfair", self.perform_playfair)
+        self.create_encryption_row(4, "Affine Cipher", self.perform_affineCipher)
 
     def create_encryption_row(self, row_index, label_text, command):
         """Creates a row with input, button, and result label below them."""
@@ -98,6 +99,11 @@ class UI:
     def perform_playfair(self, entry_widget):
         text = entry_widget.get()
         result = self.encrypt.playfair_encrypt(text)
+        entry_widget.output_field.config(text=f"Result: {result}")
+
+    def perform_affineCipher(self, entry_widget):
+        text = entry_widget.get()
+        result = self.encrypt.affine_encrypt(text)
         entry_widget.output_field.config(text=f"Result: {result}")
 
     def main(self):

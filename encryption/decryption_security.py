@@ -183,3 +183,23 @@ class Decrypt:
             decrypted_result = decrypted_result[:-1]
 
         return decrypted_result
+
+    @staticmethod
+    # Decryption function
+    def affine_decrypt(text, a=5, b=8):
+        decrypted_text = ""
+        m = 26
+        a_inv = pow(a, -1, m)
+        for char in text:
+            if char.isalpha():
+                if char.isupper():
+                    decrypted_text += chr(
+                        ((a_inv * (ord(char) - ord("A") - b)) % 26) + ord("A")
+                    )
+                else:
+                    decrypted_text += chr(
+                        ((a_inv * (ord(char) - ord("a") - b)) % 26) + ord("a")
+                    )
+            else:
+                decrypted_text += char
+        return decrypted_text
