@@ -95,9 +95,6 @@ class UI:
         enc_btn = tk.Button(row_frame, text="Encrypt",
                             command=lambda: encrypt_command(entry))
         enc_btn.grid(row=0, column=4, padx=5)
-        dec_btn = tk.Button(row_frame, text="Decrypt",
-                            command=lambda: decrypt_command(entry))
-        dec_btn.grid(row=0, column=5, padx=5)
 
         output_field = tk.Label(
             self.container,
@@ -108,15 +105,14 @@ class UI:
             bg=self.root.cget("bg"),
             width=50,
         )
-        output_field.grid(row=(row_index * 2) + 1, column=0,
-                          columnspan=6, pady=(0, 10), sticky="w")
-
         output_field.bind(
             "<Button-1>", lambda event: self.handle_inline_copy(output_field))
 
         # attach references for handlers
         entry.output_field = output_field
         entry.key_entry = key_entry
+        output_field.grid(row=(row_index * 2) + 1, column=0,
+                          columnspan=5, pady=(0, 10), sticky="w")
 
     def handle_inline_copy(self, widget):
         """Helper method to execute clean safety loops on click events."""
