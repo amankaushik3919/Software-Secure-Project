@@ -8,8 +8,9 @@ import base64
 
 class Decrypt:
     @staticmethod
-    def rot13_decrypt(self, user_input):
-        self.encrypt = codecs.encode(user_input, "rot13")
+    def rot13_decrypt(user_input):
+        # Return the ROT13 transformation (same as encode for ROT13)
+        return codecs.encode(user_input, "rot13")
 
     @staticmethod
     def aes_decrypt(
@@ -19,13 +20,18 @@ class Decrypt:
             b"\x01\x23\x45\x67\x89\xab\xcd\xef\xfe\xdc\xba\x98\x76\x54\x32\x10"
             b"\x01\x23\x45\x67\x89\xab\xcd\xef\xfe\xdc\xba\x98\x76\x54\x32\x10"
         )
-        cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+        cipher = Cipher(algorithms.AES(key), modes.ECB(),
+                        backend=default_backend())
         decryptor = cipher.decryptor()
         decodedciphertext = base64.b64decode(ciphertext)
-        padded_data = decryptor.update(decodedciphertext) + decryptor.finalize()
+        padded_data = decryptor.update(
+            decodedciphertext) + decryptor.finalize()
         unpadder = PKCS7(algorithms.AES.block_size).unpadder()
         plaintext = unpadder.update(padded_data) + unpadder.finalize()
-        return plaintext
+        try:
+            return plaintext.decode("utf-8")
+        except Exception:
+            return plaintext
 
     @staticmethod
     def decryptRailFence(cipher, key=2):
@@ -203,3 +209,72 @@ class Decrypt:
             else:
                 decrypted_text += char
         return decrypted_text
+
+    @staticmethod
+    def caesar_decrypt(text, shift=3):
+        result = ""
+        for ch in text:
+            if ch.isalpha():
+                base = ord('A') if ch.isupper() else ord('a')
+                result += chr((ord(ch) - base - shift) % 26 + base)
+            else:
+                result += ch
+        return result
+
+    @staticmethod
+    def vigenere_decrypt(text, key="KEY"):
+        result = []
+        key = ''.join([k for k in key if k.isalpha()]).lower()
+        if not key:
+            return text
+        ki = 0
+        for ch in text:
+            if ch.isalpha():
+                base = ord('A') if ch.isupper() else ord('a')
+                k = ord(key[ki % len(key)].lower()) - ord('a')
+                result.append(chr((ord(ch) - base - k) % 26 + base))
+                ki += 1
+            else:
+                result.append(ch)
+        return ''.join(result)
+
+    @staticmethod
+    def hill_decrypt(ciphertext, key_matrix=None):
+        import numpy as _np
+
+        if key_matrix is None:
+            key_matrix = _np.array([[3, 3], [2, 5]])
+        else:
+            key_matrix = _np.array(key_matrix)
+
+        # compute inverse matrix modulo 26
+        det = int(round(_np.linalg.det(key_matrix)))
+        det = det % 26
+        # modular inverse of determinant
+
+        def modinv(a, m):
+            a = a % m
+            for x in range(1, m):
+                if (a * x) % m == 1:
+                    return x
+            raise ValueError('No modular inverse')
+
+        inv_det = modinv(det, 26)
+        # compute adjugate
+        adj = _np.array([[key_matrix[1, 1], -key_matrix[0, 1]],
+                        [-key_matrix[1, 0], key_matrix[0, 0]]])
+        inv_mat = (inv_det * adj) % 26
+
+        # filter letters
+        filtered = ''.join([c for c in ciphertext.lower() if c.isalpha()])
+        if len(filtered) % 2 != 0:
+            filtered += 'x'
+
+        result = []
+        for i in range(0, len(filtered), 2):
+            pair = _np.array(
+                [[ord(filtered[i]) - 97], [ord(filtered[i+1]) - 97]])
+            prod = inv_mat.dot(pair) % 26
+            result.append(chr(int(prod[0, 0]) + 97))
+            result.append(chr(int(prod[1, 0]) + 97))
+        return ''.join(result)

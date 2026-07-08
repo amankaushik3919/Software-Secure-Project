@@ -13,7 +13,8 @@ class UI:
         self.decrypt = Decrypt
 
         # UI Setup
-        tk.Label(self.root, text="Encryption", font=("Arial", 20, "bold")).pack(pady=20)
+        tk.Label(self.root, text="Encryption", font=(
+            "Arial", 20, "bold")).pack(pady=20)
         self.container = tk.Frame(self.root)
         self.container.pack(padx=20, pady=20)
 
@@ -23,9 +24,18 @@ class UI:
         # Create rows dynamically
         self.create_encryption_row(0, "ROT13", self.perform_rot13)
         self.create_encryption_row(1, "AES", self.perform_aes)
-        self.create_encryption_row(2, "Rail Fence Cipher", self.perform_railFenceCipher)
+        self.create_encryption_row(
+            2, "Rail Fence Cipher", self.perform_railFenceCipher)
         self.create_encryption_row(3, "Playfair", self.perform_playfair)
-        self.create_encryption_row(4, "Affine Cipher", self.perform_affineCipher)
+        self.create_encryption_row(
+            4, "Affine Cipher", self.perform_affineCipher)
+        # For ciphers that require a key/shift, create rows with key input + decrypt
+        self.create_cipher_row_with_key(
+            5, "Vigenère", self.perform_vigenere, self.perform_vigenere_decrypt, "Key")
+        self.create_cipher_row_with_key(
+            6, "Caesar", self.perform_caesar, self.perform_caesar_decrypt, "Shift")
+        self.create_cipher_row_with_key(
+            7, "Hill Cipher", self.perform_hill, self.perform_hill_decrypt, "2x2 key (a,b,c,d)")
 
     def create_encryption_row(self, row_index, label_text, command):
         """Creates a row with input, button, and result label below them."""
@@ -33,11 +43,13 @@ class UI:
         row_frame = tk.Frame(self.container)
         row_frame.grid(row=row_index * 2, column=0, pady=10, sticky="w")
 
-        tk.Label(row_frame, text=label_text, width=15, anchor="w").grid(row=0, column=0)
+        tk.Label(row_frame, text=label_text, width=15,
+                 anchor="w").grid(row=0, column=0)
         entry = tk.Entry(row_frame, width=30)
         entry.grid(row=0, column=1, padx=5)
 
-        btn = tk.Button(row_frame, text="Encrypt", command=lambda: command(entry))
+        btn = tk.Button(row_frame, text="Encrypt",
+                        command=lambda: command(entry))
         btn.grid(row=0, column=2, padx=5)
 
         # Flat, borderless Entry widget dressed up to look like a label
@@ -67,6 +79,45 @@ class UI:
 
         entry.output_field = output_field
 
+    def create_cipher_row_with_key(self, row_index, label_text, encrypt_command, decrypt_command, key_label="Key"):
+        row_frame = tk.Frame(self.container)
+        row_frame.grid(row=row_index * 2, column=0, pady=10, sticky="w")
+
+        tk.Label(row_frame, text=label_text, width=15,
+                 anchor="w").grid(row=0, column=0)
+        entry = tk.Entry(row_frame, width=22)
+        entry.grid(row=0, column=1, padx=5)
+
+        tk.Label(row_frame, text=key_label).grid(row=0, column=2)
+        key_entry = tk.Entry(row_frame, width=12)
+        key_entry.grid(row=0, column=3, padx=5)
+
+        enc_btn = tk.Button(row_frame, text="Encrypt",
+                            command=lambda: encrypt_command(entry))
+        enc_btn.grid(row=0, column=4, padx=5)
+        dec_btn = tk.Button(row_frame, text="Decrypt",
+                            command=lambda: decrypt_command(entry))
+        dec_btn.grid(row=0, column=5, padx=5)
+
+        output_field = tk.Label(
+            self.container,
+            text="",
+            font=("Arial", 10, "bold"),
+            fg="green",
+            bd=0,
+            bg=self.root.cget("bg"),
+            width=50,
+        )
+        output_field.grid(row=(row_index * 2) + 1, column=0,
+                          columnspan=6, pady=(0, 10), sticky="w")
+
+        output_field.bind(
+            "<Button-1>", lambda event: self.handle_inline_copy(output_field))
+
+        # attach references for handlers
+        entry.output_field = output_field
+        entry.key_entry = key_entry
+
     def handle_inline_copy(self, widget):
         """Helper method to execute clean safety loops on click events."""
         text_to_copy = widget.cget("text")
@@ -75,7 +126,8 @@ class UI:
         if text_to_copy.startswith("Result: "):
             try:
                 self.root.clipboard_clear()
-                self.root.clipboard_append(text_to_copy.replace("Result: ", ""))
+                self.root.clipboard_append(
+                    text_to_copy.replace("Result: ", ""))
                 # Fires the popup successfully only AFTER data is appended to clipboard
                 msb.showinfo("Success", "Copied to clipboard!")
             except Exception:
@@ -104,6 +156,82 @@ class UI:
     def perform_affineCipher(self, entry_widget):
         text = entry_widget.get()
         result = self.encrypt.affine_encrypt(text)
+        entry_widget.output_field.config(text=f"Result: {result}")
+
+    def perform_vigenere(self, entry_widget):
+        text = entry_widget.get()
+        key = entry_widget.key_entry.get() if hasattr(
+            entry_widget, 'key_entry') else None
+        if key:
+            result = self.encrypt.vigenere_encrypt(text, key)
+        else:
+            result = self.encrypt.vigenere_encrypt(text)
+        entry_widget.output_field.config(text=f"Result: {result}")
+
+    def perform_vigenere_decrypt(self, entry_widget):
+        text = entry_widget.get()
+        key = entry_widget.key_entry.get() if hasattr(
+            entry_widget, 'key_entry') else None
+        if key:
+            result = self.decrypt.vigenere_decrypt(text, key)
+        else:
+            result = self.decrypt.vigenere_decrypt(text)
+        entry_widget.output_field.config(text=f"Result: {result}")
+
+    def perform_caesar(self, entry_widget):
+        text = entry_widget.get()
+        shift_raw = entry_widget.key_entry.get() if hasattr(
+            entry_widget, 'key_entry') else ''
+        try:
+            shift = int(shift_raw)
+        except Exception:
+            shift = 3
+        result = self.encrypt.caesar_encrypt(text, shift=shift)
+        entry_widget.output_field.config(text=f"Result: {result}")
+
+    def perform_caesar_decrypt(self, entry_widget):
+        text = entry_widget.get()
+        shift_raw = entry_widget.key_entry.get() if hasattr(
+            entry_widget, 'key_entry') else ''
+        try:
+            shift = int(shift_raw)
+        except Exception:
+            shift = 3
+        result = self.decrypt.caesar_decrypt(text, shift=shift)
+        entry_widget.output_field.config(text=f"Result: {result}")
+
+    def perform_hill(self, entry_widget):
+        text = entry_widget.get()
+        key_raw = entry_widget.key_entry.get() if hasattr(
+            entry_widget, 'key_entry') else ''
+        key_matrix = None
+        if key_raw:
+            parts = [p.strip() for p in key_raw.replace(
+                ';', ',').split(',') if p.strip()]
+            try:
+                nums = [int(p) for p in parts]
+                if len(nums) == 4:
+                    key_matrix = [[nums[0], nums[1]], [nums[2], nums[3]]]
+            except Exception:
+                key_matrix = None
+        result = self.encrypt.hill_encrypt(text, key_matrix=key_matrix)
+        entry_widget.output_field.config(text=f"Result: {result}")
+
+    def perform_hill_decrypt(self, entry_widget):
+        text = entry_widget.get()
+        key_raw = entry_widget.key_entry.get() if hasattr(
+            entry_widget, 'key_entry') else ''
+        key_matrix = None
+        if key_raw:
+            parts = [p.strip() for p in key_raw.replace(
+                ';', ',').split(',') if p.strip()]
+            try:
+                nums = [int(p) for p in parts]
+                if len(nums) == 4:
+                    key_matrix = [[nums[0], nums[1]], [nums[2], nums[3]]]
+            except Exception:
+                key_matrix = None
+        result = self.decrypt.hill_decrypt(text, key_matrix=key_matrix)
         entry_widget.output_field.config(text=f"Result: {result}")
 
     def main(self):

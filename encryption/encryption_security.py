@@ -20,13 +20,17 @@ class Encrypt:
             b"\x01\x23\x45\x67\x89\xab\xcd\xef\xfe\xdc\xba\x98\x76\x54\x32\x10"
         )
         plaintext = str(plaintext).encode("utf-8")
-        cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+        cipher = Cipher(algorithms.AES(key), modes.ECB(),
+                        backend=default_backend())
         encryptor = cipher.encryptor()
         padder = PKCS7(algorithms.AES.block_size).padder()
         padded_data = padder.update(plaintext) + padder.finalize()
         ciphertext = encryptor.update(padded_data) + encryptor.finalize()
         encodedciphertext = base64.b64encode(ciphertext)
-        return encodedciphertext
+        try:
+            return encodedciphertext.decode("utf-8")
+        except Exception:
+            return encodedciphertext
 
     @staticmethod
     def encryptRailFence(text, key=2):
@@ -125,7 +129,7 @@ class Encrypt:
             if k % 2 == 0:
                 for i in range(0, k, 2):
                     if text[i] == text[i + 1]:
-                        new_word = text[0 : i + 1] + str("x") + text[i + 1 :]
+                        new_word = text[0: i + 1] + str("x") + text[i + 1:]
                         new_word = fill_letter(new_word)
                         break
                     else:
@@ -133,7 +137,7 @@ class Encrypt:
             else:
                 for i in range(0, k - 1, 2):
                     if text[i] == text[i + 1]:
-                        new_word = text[0 : i + 1] + str("x") + text[i + 1 :]
+                        new_word = text[0: i + 1] + str("x") + text[i + 1:]
                         new_word = fill_letter(new_word)
                         break
                     else:
@@ -197,8 +201,10 @@ class Encrypt:
                 # Filter out illegal spaces or missing key elements if text contains non-alphabet values
                 if len(plaintext_list[i]) < 2:
                     continue
-                ele1_x, ele1_y = search_element(matrix_grid, plaintext_list[i][0])
-                ele2_x, ele2_y = search_element(matrix_grid, plaintext_list[i][1])
+                ele1_x, ele1_y = search_element(
+                    matrix_grid, plaintext_list[i][0])
+                ele2_x, ele2_y = search_element(
+                    matrix_grid, plaintext_list[i][1])
                 if ele1_x == ele2_x:
                     char1, char2 = encrypt_row_rule(
                         matrix_grid, ele1_x, ele1_y, ele2_x, ele2_y
@@ -216,8 +222,10 @@ class Encrypt:
 
         # Execution steps using your exact processing sequence
         # Clean special chars/numbers to map perfectly to your 5x5 alphabet tracking array
-        cleaned_input = "".join([c for c in user_input if c.isalpha() or c == " "])
-        text_plain = remove_spaces(to_lowercase(cleaned_input)).replace("j", "i")
+        cleaned_input = "".join(
+            [c for c in user_input if c.isalpha() or c == " "])
+        text_plain = remove_spaces(
+            to_lowercase(cleaned_input)).replace("j", "i")
 
         if not text_plain:
             return ""
@@ -249,5 +257,55 @@ class Encrypt:
             else:
                 encrypted_text += char
         return encrypted_text
-    
-    
+
+    @staticmethod
+    def caesar_encrypt(text, shift=3):
+        result = ""
+        for ch in text:
+            if ch.isalpha():
+                base = ord('A') if ch.isupper() else ord('a')
+                result += chr((ord(ch) - base + shift) % 26 + base)
+            else:
+                result += ch
+        return result
+
+    @staticmethod
+    def vigenere_encrypt(text, key="KEY"):
+        result = []
+        key = ''.join([k for k in key if k.isalpha()]).lower()
+        if not key:
+            return text
+        ki = 0
+        for ch in text:
+            if ch.isalpha():
+                base = ord('A') if ch.isupper() else ord('a')
+                k = ord(key[ki % len(key)].lower()) - ord('a')
+                result.append(chr((ord(ch) - base + k) % 26 + base))
+                ki += 1
+            else:
+                result.append(ch)
+        return ''.join(result)
+
+    @staticmethod
+    def hill_encrypt(text, key_matrix=None):
+        import numpy as _np
+
+        # default 2x2 key matrix (must be invertible mod 26)
+        if key_matrix is None:
+            key_matrix = _np.array([[3, 3], [2, 5]])
+        else:
+            key_matrix = _np.array(key_matrix)
+
+        # prepare plaintext: letters only, lowercase
+        filtered = ''.join([c for c in text.lower() if c.isalpha()])
+        if len(filtered) % 2 != 0:
+            filtered += 'x'
+
+        result = []
+        for i in range(0, len(filtered), 2):
+            pair = _np.array(
+                [[ord(filtered[i]) - 97], [ord(filtered[i+1]) - 97]])
+            prod = key_matrix.dot(pair) % 26
+            result.append(chr(int(prod[0, 0]) + 97))
+            result.append(chr(int(prod[1, 0]) + 97))
+        return ''.join(result)
