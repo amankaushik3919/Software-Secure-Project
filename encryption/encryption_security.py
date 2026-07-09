@@ -3,6 +3,7 @@ from cryptography.hazmat.primitives.padding import PKCS7
 from cryptography.hazmat.backends import default_backend
 import codecs
 import base64
+import string
 
 
 class Encrypt:
@@ -268,6 +269,35 @@ class Encrypt:
             else:
                 result += ch
         return result
+
+    @staticmethod
+    def atbash_encrypt(text):
+        result = []
+        for ch in text:
+            if ch.isalpha():
+                if ch.isupper():
+                    result.append(chr(ord('Z') - (ord(ch) - ord('A'))))
+                else:
+                    result.append(chr(ord('z') - (ord(ch) - ord('a'))))
+            else:
+                result.append(ch)
+        return ''.join(result)
+
+    @staticmethod
+    def monoalphabetic_encrypt(text, mapping=None):
+        if mapping is None:
+            mapping = 'QWERTYUIOPASDFGHJKLZXCVBNM'
+        upper_map = {k: v for k, v in zip(string.ascii_uppercase, mapping)}
+        lower_map = {k.lower(): v.lower() for k, v in upper_map.items()}
+        result = []
+        for ch in text:
+            if ch.isupper() and ch in upper_map:
+                result.append(upper_map[ch])
+            elif ch.islower() and ch in lower_map:
+                result.append(lower_map[ch])
+            else:
+                result.append(ch)
+        return ''.join(result)
 
     @staticmethod
     def vigenere_encrypt(text, key="KEY"):
